@@ -1,7 +1,7 @@
 # Especificación de Requisitos de Software (ERS)
 ## Sistema de Colportaje - Colportaje App
 
-**Versión 1.0**
+**Versión 1.2**
 
 | Campo | Valor |
 |-------|-------|
@@ -93,7 +93,7 @@ El sistema busca optimizar el proceso de colportaje, facilitando el financiamien
 | Documento | Descripción |
 |-----------|-------------|
 | IEEE 830-1998 | Práctica recomendada para especificaciones de requisitos de software |
-| Esquema de Base de Datos | `esquema.sql` - Modelo de datos del sistema |
+| Esquema de Base de Datos | `esquema.sql` - Borrador del modelo de datos local del sistema |
 | Decisiones de Diseño | `decisioneDiseño.md` - Documento de decisiones arquitectónicas |
 
 ### 1.5 Visión general del documento
@@ -121,7 +121,7 @@ Colportaje App es un sistema nuevo que reemplazará los procesos manuales actual
 │  ├─────────────────────────────────────────────────────────────────────┤   │
 │  │  ┌─────────────────────────┐    ┌─────────────────────────────┐    │   │
 │  │  │   ALMACENAMIENTO LOCAL  │    │      DATOS CLOUD (Sync)     │    │   │
-│  │  │      (Hive + AES)       │    │                             │    │   │
+│  │  │  (DB local + cifrado)   │    │                             │    │   │
 │  │  ├─────────────────────────┤    ├─────────────────────────────┤    │   │
 │  │  │ • Datos de clientes     │    │ • Estado de casas/visitas   │    │   │
 │  │  │ • Información personal  │    │ • Avance de zona            │    │   │
@@ -131,8 +131,8 @@ Colportaje App es un sistema nuevo que reemplazará los procesos manuales actual
 │  │              │                                  │                   │   │
 │  │              ▼                                  ▼                   │   │
 │  │  ┌─────────────────────────┐    ┌─────────────────────────────┐    │   │
-│  │  │   Backup a Google Drive │    │   Sync por lotes (Delta)    │    │   │
-│  │  │   (cuenta del usuario)  │    │   (minimiza peticiones)     │    │   │
+│  │  │   Backup a nube personal│    │   Sync por lotes (Delta)    │    │   │
+│  │  │ (proveedor a definir)   │    │   (minimiza peticiones)     │    │   │
 │  │  └─────────────────────────┘    └──────────────┬──────────────┘    │   │
 │  └─────────────────────────────────────────────────┼───────────────────┘   │
 │                                                    │                       │
@@ -142,13 +142,14 @@ Colportaje App es un sistema nuevo que reemplazará los procesos manuales actual
 │                                                    │                       │
 │                                                    ▼                       │
 │                              ┌─────────────────────────────────┐           │
-│                              │        CLOUD (Supabase)         │           │
+│                              │      CLOUD (a definir)          │           │
 │                              ├─────────────────────────────────┤           │
 │                              │ • Autenticación                 │           │
 │                              │ • Estado de ubicaciones/visitas │           │
 │                              │ • Catálogos (delta sync)        │           │
 │                              │ • Estadísticas agregadas        │           │
 │                              │ • Stock y movimientos           │           │
+│                              │ • Estado de cuenta colportor    │           │
 │                              │ • SIN datos personales clientes │           │
 │                              └─────────────────────────────────┘           │
 │                                                                             │
@@ -159,20 +160,21 @@ Colportaje App es un sistema nuevo que reemplazará los procesos manuales actual
 
 | Tipo de Dato | Almacenamiento | Justificación |
 |--------------|----------------|---------------|
-| Datos de clientes (nombre, teléfono, notas) | **Local (Hive encriptado)** | Privacidad, reducción de costos cloud |
-| Estado de ubicaciones/visitas | **Cloud (Supabase)** | Necesario para reportes y coordinación |
+| Datos de clientes (nombre, teléfono, notas) | **Local (DB encriptada)** | Privacidad, reducción de costos cloud |
+| Estado de ubicaciones/visitas | **Cloud (backend a definir)** | Necesario para reportes y coordinación |
 | Catálogo de productos | **Cloud → Local (delta sync)** | Se descarga una vez y actualiza solo cambios |
 | Historial de visitas detallado | **Local** | Alto volumen, bajo valor para coordinador |
 | Estadísticas agregadas | **Cloud** | Necesario para dashboards |
-| Backups de datos locales | **Google Drive del usuario** | Costo cero, control del usuario |
+| Estado de cuenta del colportor, pedidos, stock y pagos | **Cloud** | Necesario para control coordinador/administración |
+| Backups de datos locales | **Nube del usuario/organización (a definir)** | Control del usuario y/o política institucional |
 
 **Interfaces del sistema:**
 
-1. **Aplicación móvil**: Para uso de colportores en campo, con almacenamiento local encriptado (Hive + AES).
+1. **Aplicación móvil**: Para uso de colportores en campo, con almacenamiento local encriptado.
 2. **Panel web**: Para coordinadores y administradores.
 3. **API REST**: Comunicación mínima mediante sincronización por lotes (delta).
-4. **Autenticación**: Sistema tipo Supabase Auth (email/contraseña).
-5. **Backup**: Integración con Google Drive para respaldo de datos locales.
+4. **Autenticación**: Servicio de autenticación (email/contraseña) a definir.
+5. **Backup**: Integración con servicio de almacenamiento cloud para respaldo de datos locales (a definir).
 
 ### 2.2 Funciones del producto
 
@@ -215,7 +217,7 @@ El sistema se desarrollará en tres versiones incrementales:
 - RF-C12: Transferir stock a otros colportores
 - RF-C13: Ver estado de cuenta (deuda, depósito, dinero en mano, por cobrar)
 - RF-C14: Cargar tickets de pagos con tarjeta
-- RF-C15: Ver materiales entregados pendientes de cobro por cliente
+- RF-C15: Ver materiales entregados y estado de cuenta por cliente
 
 **Módulo Coordinador:**
 - RF-CO08: Autorizar movimientos de stock entre colportores
@@ -270,16 +272,16 @@ El sistema se desarrollará en tres versiones incrementales:
 | RP-01 | **Presupuesto operativo mensual** | El costo de mantenimiento cloud debe mantenerse entre **$20-30 USD/mes**. |
 | RP-02 | **Usuarios estimados** | El sistema debe soportar entre **80-200 usuarios** con el presupuesto establecido. |
 | RP-03 | **Minimización de transferencia de datos** | Se debe minimizar el volumen de datos transferidos al cloud mediante sincronización delta y almacenamiento local. |
-| RP-04 | **Sin costos de almacenamiento de backups** | Los backups se realizan en el Google Drive personal del usuario (costo cero para la organización). |
+| RP-04 | **Sin costos altos de almacenamiento de backups** | Los backups se realizan en un proveedor cloud definido, priorizando bajo costo para la organización. |
 
 #### Restricciones de Privacidad y Datos
 
 | ID | Restricción | Detalle |
 |----|-------------|---------|
-| RV-01 | **Datos locales encriptados** | La información personal de clientes se almacena **solo localmente** con encriptación (Hive + AES). |
+| RV-01 | **Datos locales encriptados** | La información personal de clientes se almacena **solo localmente** con encriptación. |
 | RV-02 | **Sin datos personales en cloud** | El cloud **NO almacena** nombres, teléfonos ni información personal de clientes. |
 | RV-03 | **Solo estado y estadísticas en cloud** | Se sube únicamente: estado de ubicaciones, resultados de visitas y estadísticas agregadas. |
-| RV-04 | **Backup controlado por usuario** | Cada usuario controla su backup en su propia cuenta de Google Drive. |
+| RV-04 | **Backup controlado por usuario** | Cada usuario controla su backup en el proveedor de almacenamiento definido. |
 
 #### Restricciones Operativas
 
@@ -288,9 +290,9 @@ El sistema se desarrollará en tres versiones incrementales:
 3. **Catálogos delta**: Los catálogos de productos se descargan una vez y solo se actualizan los cambios.
 4. **Autorización de Stock**: Los pedidos a casa editora y transferencias de stock requieren autorización del coordinador.
 5. **Límite de Pedidos**: El stock que puede pedir un colportor depende de su situación financiera.
-6. **Precios Variables**: Los precios de productos pueden variar por ciudad.
+6. **Precios Variables**: El precio final de venta puede variar por ciudad/zona; el costo de compra con casa editora se mantiene según catálogo base.
 7. **Plataformas**: La app móvil debe soportar Android e iOS; el panel web debe ser responsive.
-8. **Autenticación**: Se utilizará un sistema tipo Supabase Auth.
+8. **Autenticación**: Se utilizará un sistema de autenticación a definir.
 
 ### 2.5 Suposiciones y dependencias
 
@@ -302,11 +304,11 @@ El sistema se desarrollará en tres versiones incrementales:
 5. **(V3)** El sistema de pedidos de Brasil dispone de una API REST accesible.
 
 **Dependencias:**
-1. Servicio de autenticación (Supabase o similar).
+1. Servicio de autenticación (proveedor a definir).
 2. Servicio de base de datos PostgreSQL.
 3. Servicio de mapas para geolocalización (Google Maps, OpenStreetMap).
 4. Infraestructura de hosting para API y panel web.
-5. Google Drive API para backups.
+5. Proveedor de almacenamiento cloud para backups (a definir).
 6. **(V3)** API del sistema de pedidos de Brasil (pendiente verificar disponibilidad).
 
 ---
@@ -331,7 +333,7 @@ El sistema se desarrollará en tres versiones incrementales:
 | ID | Requisito | Prioridad | Versión |
 |----|-----------|-----------|---------|
 | RF-UB01 | El colportor debe poder registrar una ubicación con tipo (CASA, NEGOCIO, EDIFICIO), calle, número y coordenadas GPS. | Alta | V1 |
-| RF-UB02 | El sistema debe asociar automáticamente la ubicación a la zona del colportor. | Alta | V1 |
+| RF-UB02 | La zona del colportor se utiliza para control general; la ubicación registrada no queda asociada obligatoriamente a una zona específica. | Alta | V1 |
 | RF-UB03 | El colportor debe poder registrar espacios dentro de una ubicación (departamentos en edificios). | Alta | V1 |
 | RF-UB04 | El colportor debe poder registrar personas asociadas a un espacio. | Alta | V1 |
 | RF-UB05 | El sistema debe permitir indicar una ubicación alternativa de cobranza para una persona. | Media | V1 |
@@ -345,9 +347,9 @@ El sistema se desarrollará en tres versiones incrementales:
 |----|-----------|-----------|---------|
 | RF-VI01 | El colportor debe poder agendar visitas con tipo (ENTREVISTA, COBRANZA), fecha y hora. | Alta | V1 |
 | RF-VI02 | El colportor debe poder registrar el resultado de una visita (VENTA, NO_CONTESTO, RECHAZO, ENTREVISTA). | Alta | V1 |
-| RF-VI03 | El colportor debe poder agregar notas a cada visita. | Media | V1 |
+| RF-VI03 | El colportor debe poder agregar notas asociadas a la persona visitada. | Media | V1 |
 | RF-VI04 | El sistema debe mostrar las agendas pendientes ordenadas por fecha. | Alta | V1 |
-| RF-VI05 | El colportor debe poder marcar una agenda como COMPLETADA o CANCELADA. | Alta | V1 |
+| RF-VI05 | Al registrar el resultado de la visita en la agenda (ej: CONTESTÓ/NO_CONTESTÓ), el sistema debe registrar automáticamente el seguimiento de esa visita (ver decisiones de diseño). | Alta | V1 |
 | RF-VI06 | El sistema debe permitir agendar cobranzas en ubicación alternativa si está configurada. | Media | V1 |
 | RF-VI07 | El sistema debe mostrar el historial de visitas por persona/espacio. | Media | V1 |
 
@@ -372,6 +374,7 @@ El sistema se desarrollará en tres versiones incrementales:
 | RF-CO05 | El colportor debe poder cargar imagen del ticket para pagos con tarjeta. | Alta | V2 |
 | RF-CO06 | El sistema debe calcular automáticamente el saldo pendiente por cliente. | Alta | V1 |
 | RF-CO07 | El coordinador debe poder revisar los tickets cargados. | Media | V2 |
+| RF-CO08 | El sistema debe guardar una versión comprimida del ticket en almacenamiento local para consulta/borrado por el colportor y subir copia a cloud (proveedor probable: Cloudflare R2) con retención máxima de 4 meses. | Media | V2 |
 
 #### 3.1.6 Módulo de Jornada Laboral
 
@@ -418,6 +421,7 @@ El sistema se desarrollará en tres versiones incrementales:
 | RF-EC04 | El colportor debe poder ver su dinero por cobrar (ventas pendientes de clientes). | Alta | V2 |
 | RF-EC05 | El coordinador debe poder revisar el estado de cuenta de cada colportor. | Alta | V2 |
 | RF-EC06 | El sistema debe registrar los depósitos de efectivo realizados por el colportor. | Alta | V2 |
+| RF-EC07 | El colportor debe poder visualizar el estado de cuenta por cliente (saldo, pagos y entregas). | Alta | V2 |
 
 #### 3.1.10 Módulo de Becas
 
@@ -497,12 +501,12 @@ El sistema se desarrollará en tres versiones incrementales:
 | ID | Requisito | Prioridad | Versión |
 |----|-----------|-----------|---------|
 | RF-AL01 | El sistema debe almacenar datos de clientes (nombre, teléfono, notas) exclusivamente en el dispositivo local. | Alta | V1 |
-| RF-AL02 | El almacenamiento local debe usar Hive con encriptación AES-256. | Alta | V1 |
-| RF-AL03 | El colportor debe poder realizar backup de sus datos locales a Google Drive. | Alta | V1 |
-| RF-AL04 | El colportor debe poder restaurar sus datos desde un backup de Google Drive. | Alta | V1 |
-| RF-AL05 | El sistema debe solicitar autenticación de Google para acceder a Drive. | Alta | V1 |
-| RF-AL06 | Los backups deben estar encriptados antes de subirse a Google Drive. | Alta | V1 |
-| RF-AL07 | El sistema debe permitir configurar backup automático (diario/semanal). | Media | V2 |
+| RF-AL02 | El almacenamiento local debe usar una base local con encriptación AES-256 (tecnología específica a definir). | Alta | V1 |
+| RF-AL03 | El colportor debe poder realizar backup de sus datos locales a un almacenamiento cloud definido por el proyecto. | Alta | V1 |
+| RF-AL04 | El colportor debe poder restaurar sus datos desde ese backup cloud. | Alta | V1 |
+| RF-AL05 | El sistema debe solicitar autenticación del proveedor cloud seleccionado para backup/restore. | Alta | V1 |
+| RF-AL06 | Los backups deben estar encriptados antes de subirse al cloud. | Alta | V1 |
+| RF-AL07 | La estrategia de backups automáticos queda pendiente de definición. | Media | V2 |
 | RF-AL08 | El sistema debe mostrar fecha y tamaño del último backup. | Media | V1 |
 
 #### 3.1.18 Módulo de Sincronización
@@ -516,6 +520,7 @@ El sistema se desarrollará en tres versiones incrementales:
 | RF-SY05 | El colportor debe poder forzar una sincronización manual. | Media | V1 |
 | RF-SY06 | El sistema debe mostrar estado de última sincronización (fecha, registros pendientes). | Media | V1 |
 | RF-SY07 | La sincronización debe poder ejecutarse en segundo plano. | Media | V2 |
+| RF-SY08 | El colportor debe poder activar/desactivar ahorro de datos; cuando está activado, la sincronización automática solo se ejecuta por Wi-Fi. | Alta | V1 |
 
 ### 3.2 Requisitos de Interfaz Externa
 
@@ -525,7 +530,6 @@ El sistema se desarrollará en tres versiones incrementales:
 |----|-----------|-----------|
 | RI-UI01 | La aplicación móvil debe tener una interfaz intuitiva adaptada a uso en campo. | Alta |
 | RI-UI02 | El panel web debe ser responsive y funcionar en tablets y computadoras. | Alta |
-| RI-UI03 | La interfaz debe permitir operación con una sola mano en la app móvil. | Media |
 | RI-UI04 | Los mapas deben mostrar ubicaciones con iconos diferenciados por estado de última visita. | Media |
 | RI-UI05 | El sistema debe usar una paleta de colores consistente con la identidad de la IASD. | Baja |
 
@@ -535,20 +539,21 @@ El sistema se desarrollará en tres versiones incrementales:
 |----|-----------|-----------|
 | RI-HW01 | La aplicación móvil debe acceder al GPS del dispositivo para geolocalización. | Alta |
 | RI-HW02 | La aplicación móvil debe acceder a la cámara para captura de tickets. | Alta |
-| RI-HW03 | La aplicación debe funcionar en dispositivos con Android 8.0+ e iOS 13+. | Alta |
+| RI-HW03 | La aplicación debe funcionar en dispositivos con Android 10+ e iOS 13+. | Alta |
 
 #### 3.2.3 Interfaces de Software
 
 | ID | Requisito | Prioridad |
 |----|-----------|-----------|
-| RI-SW01 | El sistema debe integrarse con Supabase para autenticación y datos cloud. | Alta |
-| RI-SW02 | El sistema debe integrarse con un servicio de mapas (Google Maps/OpenStreetMap). | Alta |
+| RI-SW01 | El sistema debe integrarse con un backend cloud para autenticación y datos sincronizados (proveedor a definir). | Alta |
+| RI-SW02 | El sistema debe integrarse con un servicio de mapas, incluyendo compatibilidad con OpenStreetMap. | Alta |
 | RI-SW03 | El sistema debe integrarse con servicios de notificaciones push (Firebase/OneSignal). | Media |
 | RI-SW04 | El sistema debe permitir exportar reportes a PDF/Excel. | Media |
-| RI-SW05 | **El sistema debe usar Hive como base de datos local con encriptación AES.** | Alta |
-| RI-SW06 | **El sistema debe integrarse con Google Drive API para backup/restore.** | Alta |
-| RI-SW07 | **El sistema debe implementarse en Flutter para soporte Android/iOS.** | Alta |
+| RI-SW05 | El sistema debe usar una base de datos local con encriptación AES (tecnología a definir). | Alta |
+| RI-SW06 | El sistema debe integrarse con un proveedor cloud de backup/restore (a definir). | Alta |
+| RI-SW07 | La app móvil debe implementarse con tecnología multiplataforma para soporte Android/iOS (framework a definir). | Alta |
 | RI-SW08 | **(V3) El sistema debe integrarse con la API del sistema de pedidos de Brasil.** | Alta |
+| RI-SW09 | **(V1) El sistema debe integrar OpenStreetMap con soporte offline, descargando el motor de mapas y la ciudad/zona de trabajo para uso sin conexión.** | Alta |
 
 #### 3.2.4 Interfaces de Comunicación
 
@@ -567,7 +572,7 @@ El sistema se desarrollará en tres versiones incrementales:
 | RR-02 | La sincronización de datos offline no debe exceder 30 segundos para lotes de hasta 100 registros. | Alta |
 | RR-03 | Las consultas de listados deben responder en menos de 2 segundos. | Alta |
 | RR-04 | La carga del mapa con ubicaciones debe completarse en menos de 3 segundos. | Media |
-| RR-05 | El almacenamiento local (Hive) debe soportar al menos 10,000 registros sin degradación. | Alta |
+| RR-05 | El almacenamiento local (base local encriptada) debe soportar al menos 10,000 registros sin degradación. | Alta |
 | RR-06 | La app móvil no debe consumir más de 150MB de almacenamiento local para datos offline y caché. | Media |
 | RR-07 | La sincronización delta debe transferir menos de 1MB por sesión de sync típica. | Alta |
 
@@ -577,21 +582,21 @@ El sistema se desarrollará en tres versiones incrementales:
 
 | ID | Restricción |
 |----|-------------|
-| RD-01 | **Almacenamiento local**: Los datos personales de clientes deben almacenarse exclusivamente en el dispositivo usando **Hive con encriptación AES**. |
-| RD-02 | **Cloud mínimo**: El backend cloud (Supabase) solo almacena: autenticación, estado de ubicaciones, resultados agregados, stock y movimientos. |
+| RD-01 | **Almacenamiento local**: Los datos personales de clientes deben almacenarse exclusivamente en el dispositivo usando una base local con encriptación AES. |
+| RD-02 | **Cloud mínimo**: El backend cloud solo almacena: autenticación, estado de ubicaciones, resultados agregados, stock, movimientos y estado de cuenta del colportor. |
 | RD-03 | **Sincronización delta**: Las sincronizaciones deben transferir solo cambios desde la última sync (delta), no datos completos. |
 | RD-04 | **Catálogos delta**: El catálogo de productos se descarga completo una vez; actualizaciones posteriores solo incluyen cambios. |
-| RD-05 | **Backup a Drive**: La app debe permitir backup/restore de datos locales al Google Drive del usuario. |
+| RD-05 | **Backup cloud**: La app debe permitir backup/restore de datos locales al proveedor cloud definido. |
 
 #### Restricciones Técnicas
 
 | ID | Restricción |
 |----|-------------|
-| RD-06 | El backend debe desarrollarse utilizando servicios de Supabase (PostgreSQL, Auth, Storage). |
+| RD-06 | El backend debe usar servicios cloud administrados para base de datos, autenticación y almacenamiento (stack a definir). |
 | RD-07 | La base de datos cloud debe seguir un esquema simplificado sin datos personales de clientes. |
 | RD-08 | Los datos sensibles (contraseñas, tokens, datos locales) deben almacenarse de forma encriptada. |
 | RD-09 | El código debe seguir estándares de desarrollo definidos por el equipo. |
-| RD-10 | La app móvil debe implementarse con Flutter para soporte multiplataforma (Android/iOS). |
+| RD-10 | La app móvil debe implementarse con una tecnología multiplataforma (framework a definir). |
 
 ### 3.5 Atributos del Sistema
 
@@ -612,8 +617,8 @@ El sistema se desarrollará en tres versiones incrementales:
 | RA-SE03 | El sistema debe implementar control de acceso basado en roles (RBAC). | Alta |
 | RA-SE04 | Las sesiones deben expirar después de 30 días de inactividad. | Media |
 | RA-SE05 | El sistema debe registrar logs de auditoría para operaciones críticas. | Media |
-| RA-SE06 | **Los datos locales de clientes deben encriptarse con AES-256 en Hive.** | Alta |
-| RA-SE07 | **Los backups a Google Drive deben estar encriptados antes de subirse.** | Alta |
+| RA-SE06 | Los datos locales de clientes deben encriptarse con AES-256 en la base local. | Alta |
+| RA-SE07 | Los backups cloud deben estar encriptados antes de subirse. | Alta |
 | RA-SE08 | **La clave de encriptación local debe derivarse de las credenciales del usuario.** | Alta |
 
 #### 3.5.3 Mantenibilidad
@@ -628,7 +633,7 @@ El sistema se desarrollará en tres versiones incrementales:
 
 | ID | Requisito | Prioridad |
 |----|-----------|-----------|
-| RA-PO01 | La app móvil debe funcionar en Android 8.0+ e iOS 13+. | Alta |
+| RA-PO01 | La app móvil debe funcionar en Android 10+ e iOS 13+. | Alta |
 | RA-PO02 | El panel web debe funcionar en Chrome, Firefox, Safari y Edge (últimas 2 versiones). | Alta |
 | RA-PO03 | El backend debe poder desplegarse en diferentes proveedores cloud si es necesario. | Baja |
 
@@ -661,18 +666,18 @@ El sistema se desarrollará en tres versiones incrementales:
 
 ## Apéndice A: Modelo de Datos
 
-El modelo de datos completo se encuentra en el archivo `esquema.sql`. A continuación se presenta un resumen de las entidades principales:
+El modelo de datos del archivo `esquema.sql` está en **borrador** y corresponde al **modelo local** (no al modelo cloud definitivo). A continuación se presenta un resumen referencial de entidades:
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │                    MODELO DE ENTIDADES                          │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                 │
-│  Ciudad ──1:N──► Zona ──1:N──► Ubicación ──1:N──► Espacio      │
-│                    │              │                    │        │
-│                    │              │                    │        │
-│                    ▼              │                    ▼        │
-│                 Usuario           │            Espacio_Persona  │
+│  Ciudad ──1:N──► Ubicación ──1:N──► Espacio                    │
+│                    │                               │            │
+│                    │                               │            │
+│                    ▼                               ▼            │
+│                  Zona ◄──1:N── Usuario      Espacio_Persona     │
 │                    │              │                    │        │
 │                    │              │                    │        │
 │                    ▼              ▼                    ▼        │
@@ -709,7 +714,7 @@ La arquitectura híbrida local/cloud fue diseñada para cumplir con las siguient
 1. **Presupuesto limitado**: $20-30 USD/mes para 80-200 usuarios
 2. **Privacidad de datos**: Cumplimiento con Ley 18.331 de Uruguay
 3. **Funcionamiento offline**: Zonas con mala conectividad
-4. **Control del usuario**: Backups en cuenta personal de Google Drive
+4. **Control del usuario**: Backups en proveedor cloud definido por política del proyecto
 
 ### C.2 Distribución de Datos
 
@@ -718,7 +723,7 @@ La arquitectura híbrida local/cloud fue diseñada para cumplir con las siguient
 │                      DATOS POR UBICACIÓN                               │
 ├────────────────────────────────────────────────────────────────────────┤
 │                                                                        │
-│  ALMACENAMIENTO LOCAL (Hive + AES)         CLOUD (Supabase)           │
+│  ALMACENAMIENTO LOCAL (DB + AES)           CLOUD (backend a definir)   │
 │  ─────────────────────────────────         ─────────────────          │
 │  ✓ Nombre del cliente                      ✓ ID de ubicación          │
 │  ✓ Teléfono                                ✓ Coordenadas GPS          │
@@ -729,12 +734,12 @@ La arquitectura híbrida local/cloud fue diseñada para cumplir con las siguient
 │  ✓ Saldo pendiente                         ✓ Zona asignada            │
 │  ✓ Fotos de tickets                        ✓ Estadísticas agregadas   │
 │                                                                        │
-│  Backup → Google Drive del usuario         Sync → Delta por lotes     │
+│  Backup → proveedor cloud definido         Sync → Delta por lotes      │
 │                                                                        │
 └────────────────────────────────────────────────────────────────────────┘
 ```
 
-### C.3 Estimación de Costos Cloud (Supabase)
+### C.3 Estimación de Costos Cloud (referencial, ejemplo con Supabase)
 
 | Componente | Plan Free | Plan Pro ($25/mes) |
 |------------|-----------|-------------------|
@@ -753,7 +758,7 @@ La arquitectura híbrida local/cloud fue diseñada para cumplir con las siguient
 | Sync diarias | ~400 | 200 usuarios × 2 sync/día |
 | Bandwidth mensual | ~200MB | 400 sync × 30 días × 16KB promedio |
 
-**Conclusión**: Con la arquitectura híbrida, el sistema puede operar en el **plan gratuito de Supabase** o con el plan Pro como margen de seguridad, manteniéndose dentro del presupuesto de $20-30 USD/mes.
+**Conclusión**: Con la arquitectura híbrida, el sistema puede operar en planes cloud de bajo costo; la tabla anterior es solo una referencia si se adopta Supabase.
 
 ### C.4 Optimizaciones de Costo Implementadas
 
@@ -763,13 +768,13 @@ La arquitectura híbrida local/cloud fue diseñada para cumplir con las siguient
 | Delta sync | ~70% bandwidth | Solo cambios, no datos completos |
 | Catálogos delta | ~90% transferencia | Catálogo se descarga 1 vez |
 | Batch sync | ~60% peticiones | Múltiples cambios en 1 request |
-| Backup a Drive | 100% backup cost | Usuario asume costo (gratis) |
+| Backup cloud definido | 100% backup cost cloud propio | Usuario/organización asume política de costo según proveedor |
 
 ### C.5 Riesgos y Mitigaciones
 
 | Riesgo | Probabilidad | Mitigación |
 |--------|--------------|------------|
-| Pérdida de datos locales | Media | Backup automático a Google Drive |
+| Pérdida de datos locales | Media | Backup a proveedor cloud definido (manual/automático según política final) |
 | Cambio de dispositivo | Media | Restore desde Drive al nuevo dispositivo |
 | Exceso de usuarios | Baja | Upgrade a Supabase Pro ($25/mes) |
 | Falta de sync | Media | Cola de cambios pendientes, retry automático |
@@ -780,8 +785,9 @@ La arquitectura híbrida local/cloud fue diseñada para cumplir con las siguient
 
 | Versión | Fecha | Descripción | Autor |
 |---------|-------|-------------|-------|
-| 1.0 | 25/03/2026 | Versión inicial del documento | - |
-| 1.1 | 25/03/2026 | Agregada arquitectura híbrida local/cloud, restricciones de presupuesto, módulos de almacenamiento local y sincronización | - |
+| 1.0 | 24/03/2026 | Versión inicial del documento | - |
+| 1.1 | 24/03/2026 | Agregada arquitectura híbrida local/cloud, restricciones de presupuesto, módulos de almacenamiento local y sincronización | - |
+| 1.2 | 25/03/2026 | Ajustes de requisitos: módulo colportor V2, estado de cuenta por cliente, zonas/visitas, interfaces y tecnologías a definir, OSM offline V1, ahorro de datos y política de tickets | - |
 
 ---
 
