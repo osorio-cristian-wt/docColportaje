@@ -374,7 +374,7 @@ El sistema se desarrollará en tres versiones incrementales:
 | RF-CO05 | El colportor debe poder cargar imagen del ticket para pagos con tarjeta. | Alta | V2 |
 | RF-CO06 | El sistema debe calcular automáticamente el saldo pendiente por cliente. | Alta | V1 |
 | RF-CO07 | El coordinador debe poder revisar los tickets cargados. | Media | V2 |
-| RF-CO08 | El sistema debe guardar una versión comprimida del ticket en almacenamiento local para consulta/borrado por el colportor y subir copia a cloud (proveedor probable: Cloudflare R2) con retención máxima de 4 meses. | Media | V2 |
+| RF-CO08A | El sistema debe guardar una versión comprimida del ticket en almacenamiento local para consulta/borrado por el colportor y subir copia a cloud (proveedor probable: Cloudflare R2) con retención máxima de 4 meses. | Media | V2 |
 
 #### 3.1.6 Módulo de Jornada Laboral
 
@@ -775,7 +775,7 @@ La arquitectura híbrida local/cloud fue diseñada para cumplir con las siguient
 | Riesgo | Probabilidad | Mitigación |
 |--------|--------------|------------|
 | Pérdida de datos locales | Media | Backup a proveedor cloud definido (manual/automático según política final) |
-| Cambio de dispositivo | Media | Restore desde Drive al nuevo dispositivo |
+| Cambio de dispositivo | Media | Restore desde proveedor cloud definido al nuevo dispositivo |
 | Exceso de usuarios | Baja | Upgrade a Supabase Pro ($25/mes) |
 | Falta de sync | Media | Cola de cambios pendientes, retry automático |
 
