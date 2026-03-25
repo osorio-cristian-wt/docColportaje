@@ -1,7 +1,7 @@
 # Casos de Uso - Sistema de Colportaje
 ## Colportaje App
 
-**Versión 1.0**
+**Versión 1.2**
 **Fecha:** 25 de marzo de 2026
 **Organización:** Unión Uruguaya de la Iglesia Adventista del Séptimo Día
 

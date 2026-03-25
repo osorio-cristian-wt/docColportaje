@@ -1,7 +1,7 @@
 # Especificación de Requisitos de Software (ERS)
 ## Sistema de Colportaje - Colportaje App
 
-**Versión 1.0**
+**Versión 1.2**
 
 | Campo | Valor |
 |-------|-------|
@@ -149,6 +149,8 @@ Colportaje App es un sistema nuevo que reemplazará los procesos manuales actual
 │                              │ • Catálogos (delta sync)        │           │
 │                              │ • Estadísticas agregadas        │           │
 │                              │ • Stock y movimientos           │           │
+│                              │ • Estado de cuenta colportores  │           │
+│                              │ • Pedidos y pagos               │           │
 │                              │ • SIN datos personales clientes │           │
 │                              └─────────────────────────────────┘           │
 │                                                                             │
@@ -216,6 +218,7 @@ El sistema se desarrollará en tres versiones incrementales:
 - RF-C13: Ver estado de cuenta (deuda, depósito, dinero en mano, por cobrar)
 - RF-C14: Cargar tickets de pagos con tarjeta
 - RF-C15: Ver materiales entregados pendientes de cobro por cliente
+- RF-C16: Ver estado de cuenta por cliente (materiales entregados, pagos, saldo pendiente)
 
 **Módulo Coordinador:**
 - RF-CO08: Autorizar movimientos de stock entre colportores
@@ -288,7 +291,7 @@ El sistema se desarrollará en tres versiones incrementales:
 3. **Catálogos delta**: Los catálogos de productos se descargan una vez y solo se actualizan los cambios.
 4. **Autorización de Stock**: Los pedidos a casa editora y transferencias de stock requieren autorización del coordinador.
 5. **Límite de Pedidos**: El stock que puede pedir un colportor depende de su situación financiera.
-6. **Precios Variables**: Los precios de productos pueden variar por ciudad.
+6. **Precios Variables**: Es el precio final de venta al cliente el que varía, no el costo con la casa editora.
 7. **Plataformas**: La app móvil debe soportar Android e iOS; el panel web debe ser responsive.
 8. **Autenticación**: Se utilizará un sistema tipo Supabase Auth.
 
@@ -308,6 +311,9 @@ El sistema se desarrollará en tres versiones incrementales:
 4. Infraestructura de hosting para API y panel web.
 5. Google Drive API para backups.
 6. **(V3)** API del sistema de pedidos de Brasil (pendiente verificar disponibilidad).
+
+**Nota sobre tecnologías:**
+Las tecnologías mencionadas (Supabase, Hive, Google Drive, OpenStreetMap, Flutter) son propuestas iniciales y todavía no está definido cuáles se utilizarán finalmente.
 
 ---
 
@@ -331,7 +337,7 @@ El sistema se desarrollará en tres versiones incrementales:
 | ID | Requisito | Prioridad | Versión |
 |----|-----------|-----------|---------|
 | RF-UB01 | El colportor debe poder registrar una ubicación con tipo (CASA, NEGOCIO, EDIFICIO), calle, número y coordenadas GPS. | Alta | V1 |
-| RF-UB02 | El sistema debe asociar automáticamente la ubicación a la zona del colportor. | Alta | V1 |
+| RF-UB02 | La zona es solo para control general. La ubicación no se asocia a una zona específica, sino que es de alcance general en el país. | Alta | V1 |
 | RF-UB03 | El colportor debe poder registrar espacios dentro de una ubicación (departamentos en edificios). | Alta | V1 |
 | RF-UB04 | El colportor debe poder registrar personas asociadas a un espacio. | Alta | V1 |
 | RF-UB05 | El sistema debe permitir indicar una ubicación alternativa de cobranza para una persona. | Media | V1 |
@@ -345,9 +351,9 @@ El sistema se desarrollará en tres versiones incrementales:
 |----|-----------|-----------|---------|
 | RF-VI01 | El colportor debe poder agendar visitas con tipo (ENTREVISTA, COBRANZA), fecha y hora. | Alta | V1 |
 | RF-VI02 | El colportor debe poder registrar el resultado de una visita (VENTA, NO_CONTESTO, RECHAZO, ENTREVISTA). | Alta | V1 |
-| RF-VI03 | El colportor debe poder agregar notas a cada visita. | Media | V1 |
+| RF-VI03 | El colportor debe poder agregar notas asociadas a cada persona. | Media | V1 |
 | RF-VI04 | El sistema debe mostrar las agendas pendientes ordenadas por fecha. | Alta | V1 |
-| RF-VI05 | El colportor debe poder marcar una agenda como COMPLETADA o CANCELADA. | Alta | V1 |
+| RF-VI05 | Al registrar el resultado de una visita agendada (contestó/no contestó), el sistema registra la visita en la agenda para mantener el seguimiento. | Alta | V1 |
 | RF-VI06 | El sistema debe permitir agendar cobranzas en ubicación alternativa si está configurada. | Media | V1 |
 | RF-VI07 | El sistema debe mostrar el historial de visitas por persona/espacio. | Media | V1 |
 
@@ -502,7 +508,7 @@ El sistema se desarrollará en tres versiones incrementales:
 | RF-AL04 | El colportor debe poder restaurar sus datos desde un backup de Google Drive. | Alta | V1 |
 | RF-AL05 | El sistema debe solicitar autenticación de Google para acceder a Drive. | Alta | V1 |
 | RF-AL06 | Los backups deben estar encriptados antes de subirse a Google Drive. | Alta | V1 |
-| RF-AL07 | El sistema debe permitir configurar backup automático (diario/semanal). | Media | V2 |
+| RF-AL07 | El sistema debe permitir configurar backup automático (diario/semanal). Nota: Los backups automáticos todavía no están definidos. | Media | V2 |
 | RF-AL08 | El sistema debe mostrar fecha y tamaño del último backup. | Media | V1 |
 
 #### 3.1.18 Módulo de Sincronización
@@ -516,6 +522,7 @@ El sistema se desarrollará en tres versiones incrementales:
 | RF-SY05 | El colportor debe poder forzar una sincronización manual. | Media | V1 |
 | RF-SY06 | El sistema debe mostrar estado de última sincronización (fecha, registros pendientes). | Media | V1 |
 | RF-SY07 | La sincronización debe poder ejecutarse en segundo plano. | Media | V2 |
+| RF-SY08 | El sistema debe permitir activar/desactivar el modo de ahorro de datos. Cuando está activado, no se sincroniza hasta que haya conexión WiFi disponible. | Media | V1 |
 
 ### 3.2 Requisitos de Interfaz Externa
 
@@ -525,7 +532,6 @@ El sistema se desarrollará en tres versiones incrementales:
 |----|-----------|-----------|
 | RI-UI01 | La aplicación móvil debe tener una interfaz intuitiva adaptada a uso en campo. | Alta |
 | RI-UI02 | El panel web debe ser responsive y funcionar en tablets y computadoras. | Alta |
-| RI-UI03 | La interfaz debe permitir operación con una sola mano en la app móvil. | Media |
 | RI-UI04 | Los mapas deben mostrar ubicaciones con iconos diferenciados por estado de última visita. | Media |
 | RI-UI05 | El sistema debe usar una paleta de colores consistente con la identidad de la IASD. | Baja |
 
@@ -542,7 +548,7 @@ El sistema se desarrollará en tres versiones incrementales:
 | ID | Requisito | Prioridad |
 |----|-----------|-----------|
 | RI-SW01 | El sistema debe integrarse con Supabase para autenticación y datos cloud. | Alta |
-| RI-SW02 | El sistema debe integrarse con un servicio de mapas (Google Maps/OpenStreetMap). | Alta |
+| RI-SW02 | El sistema debe integrarse con un servicio de mapas (Google Maps/OpenStreetMap). Para funcionamiento offline (V1), se debe descargar un motor de mapas y los datos de la ciudad o zona de trabajo. | Alta |
 | RI-SW03 | El sistema debe integrarse con servicios de notificaciones push (Firebase/OneSignal). | Media |
 | RI-SW04 | El sistema debe permitir exportar reportes a PDF/Excel. | Media |
 | RI-SW05 | **El sistema debe usar Hive como base de datos local con encriptación AES.** | Alta |
@@ -663,6 +669,8 @@ El sistema se desarrollará en tres versiones incrementales:
 
 El modelo de datos completo se encuentra en el archivo `esquema.sql`. A continuación se presenta un resumen de las entidades principales:
 
+**Nota:** El modelo de datos está como borrador y corresponde al modelo local, no al modelo cloud.
+
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │                    MODELO DE ENTIDADES                          │
@@ -780,8 +788,9 @@ La arquitectura híbrida local/cloud fue diseñada para cumplir con las siguient
 
 | Versión | Fecha | Descripción | Autor |
 |---------|-------|-------------|-------|
-| 1.0 | 25/03/2026 | Versión inicial del documento | - |
-| 1.1 | 25/03/2026 | Agregada arquitectura híbrida local/cloud, restricciones de presupuesto, módulos de almacenamiento local y sincronización | - |
+| 1.0 | 24/03/2026 | Versión inicial del documento | - |
+| 1.1 | 24/03/2026 | Agregada arquitectura híbrida local/cloud, restricciones de presupuesto, módulos de almacenamiento local y sincronización | - |
+| 1.2 | 25/03/2026 | Ajustes en requisitos funcionales, restricciones operativas, integraciones y clarificaciones tecnológicas | - |
 
 ---
 
