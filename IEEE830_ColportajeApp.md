@@ -333,7 +333,7 @@ El sistema se desarrollará en tres versiones incrementales:
 | ID | Requisito | Prioridad | Versión |
 |----|-----------|-----------|---------|
 | RF-UB01 | El colportor debe poder registrar una ubicación con tipo (CASA, NEGOCIO, EDIFICIO), calle, número y coordenadas GPS. | Alta | V1 |
-| RF-UB02 | La zona del colportor se utiliza para control general; la ubicación registrada no queda asociada obligatoriamente a una zona específica. | Alta | V1 |
+| RF-UB02 | El sistema debe usar la zona del colportor para control general, sin asociar obligatoriamente cada ubicación registrada a una zona específica. | Alta | V1 |
 | RF-UB03 | El colportor debe poder registrar espacios dentro de una ubicación (departamentos en edificios). | Alta | V1 |
 | RF-UB04 | El colportor debe poder registrar personas asociadas a un espacio. | Alta | V1 |
 | RF-UB05 | El sistema debe permitir indicar una ubicación alternativa de cobranza para una persona. | Media | V1 |
@@ -349,7 +349,7 @@ El sistema se desarrollará en tres versiones incrementales:
 | RF-VI02 | El colportor debe poder registrar el resultado de una visita (VENTA, NO_CONTESTO, RECHAZO, ENTREVISTA). | Alta | V1 |
 | RF-VI03 | El colportor debe poder agregar notas asociadas a la persona visitada. | Media | V1 |
 | RF-VI04 | El sistema debe mostrar las agendas pendientes ordenadas por fecha. | Alta | V1 |
-| RF-VI05 | Al registrar el resultado de la visita en la agenda (ej: CONTESTÓ/NO_CONTESTÓ), el sistema debe registrar automáticamente el seguimiento de esa visita (ver decisiones de diseño). | Alta | V1 |
+| RF-VI05 | El sistema debe registrar automáticamente el seguimiento de la visita en la agenda al registrar su resultado (ej: CONTESTÓ/NO_CONTESTÓ), según decisiones de diseño. | Alta | V1 |
 | RF-VI06 | El sistema debe permitir agendar cobranzas en ubicación alternativa si está configurada. | Media | V1 |
 | RF-VI07 | El sistema debe mostrar el historial de visitas por persona/espacio. | Media | V1 |
 
