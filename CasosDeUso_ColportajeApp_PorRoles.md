@@ -27,9 +27,9 @@ graph BT
     Coordinador["Coordinador"]
     Administrador["Administrador"]
 
-    Colportor --|> Guest
-    Coordinador --|> Colportor
-    Administrador --|> Coordinador
+    Colportor -->|hereda| Guest
+    Coordinador -->|hereda| Colportor
+    Administrador -->|hereda| Coordinador
 ```
 
 > La generalizacion indica herencia: Colportor hereda de Guest, Coordinador hereda de Colportor, Administrador hereda de Coordinador.
@@ -293,67 +293,67 @@ graph LR
     CU29_0(["29.0 Generar reportes<br/>de horas trabajadas"])
     CO --- CU29_0
 
-    %% --- Stock V2 ---
-    CU30_0(["30.0 Registrar pedido<br/>a casa editora"])
-    CU30_1(["30.1 Generar deuda<br/>al colportor"])
+    %% --- Gestionar Stock V2 ---
+    CU30_0(["30.0 Gestionar stock"])
+    CU30_1(["30.1 Registrar pedido<br/>a casa editora"])
+    CU30_2(["30.2 Generar deuda<br/>al colportor"])
+    CU30_3(["30.3 Autorizar<br/>transferencias de stock"])
+    CU30_4(["30.4 Autorizar pedidos<br/>a casa editora"])
     CO --- CU30_0
-    CU30_0 -.->|"include"| CU30_1
-    CU30_1 -.->|"include"| CU25_1
-
-    CU31_0(["31.0 Autorizar<br/>transferencias de stock"])
-    CO --- CU31_0
-
-    CU32_0(["32.0 Autorizar pedidos<br/>a casa editora"])
-    CO --- CU32_0
+    CU30_0 -.->|"extend"| CU30_1
+    CU30_1 -.->|"include"| CU30_2
+    CU30_2 -.->|"include"| CU25_1
+    CU30_0 -.->|"extend"| CU30_3
+    CU30_0 -.->|"extend"| CU30_4
 
     %% --- Cuenta de Colportor (agrupa consultas) ---
-    CU33_0(["33.0 Consultar cuenta<br/>de colportor"])
-    CU33_1(["33.1 Revisar estado<br/>de cuenta"])
-    CU33_2(["33.2 Consultar progreso<br/>de becas"])
-    CU33_3(["33.3 Consultar estadisticas<br/>de ventas"])
+    CU31_0(["31.0 Consultar cuenta<br/>de colportor"])
+    CU31_1(["31.1 Revisar estado<br/>de cuenta"])
+    CU31_2(["31.2 Consultar progreso<br/>de becas"])
+    CU31_3(["31.3 Consultar estadisticas<br/>de ventas"])
+    CO --- CU31_0
+    CU31_0 -.->|"include"| CU31_1
+    CU31_0 -.->|"include"| CU31_2
+    CU31_0 -.->|"include"| CU31_3
+
+    CU32_0(["32.0 Revisar tickets<br/>cargados"])
+    CO --- CU32_0
+
+    CU33_0(["33.0 Transferir libros<br/>entre campanas"])
     CO --- CU33_0
-    CU33_0 -.->|"include"| CU33_1
-    CU33_0 -.->|"include"| CU33_2
-    CU33_0 -.->|"include"| CU33_3
-
-    CU34_0(["34.0 Revisar tickets<br/>cargados"])
-    CO --- CU34_0
-
-    CU35_0(["35.0 Transferir libros<br/>entre campanas"])
-    CO --- CU35_0
 
     %% --- Reportes ---
-    CU36_0(["36.0 Consultar avance de<br/>colportores en zona"])
-    CO --- CU36_0
+    CU34_0(["34.0 Consultar avance de<br/>colportores en zona"])
+    CO --- CU34_0
 
-    CU37_0(["37.0 Generar reportes<br/>de horas por periodo"])
-    CO --- CU37_0
+    CU35_0(["35.0 Generar reportes<br/>de horas por periodo"])
+    CO --- CU35_0
 
     %% --- Notificaciones ---
-    CU38_0(["38.0 Gestionar<br/>notificaciones"])
-    CU38_1(["38.1 Recibir notificacion<br/>de ticket cargado"])
-    CU38_2(["38.2 Recibir notificacion<br/>de solicitud de<br/>transferencia de stock"])
-    CU38_3(["38.3 Recibir notificacion<br/>de pedido a<br/>casa editora"])
-    CO --- CU38_0
-    CU38_0 -.->|"include"| CU38_1
-    CU38_0 -.->|"include"| CU38_2
-    CU38_0 -.->|"include"| CU38_3
+    CU36_0(["36.0 Gestionar<br/>notificaciones"])
+    CU36_1(["36.1 Recibir notificacion<br/>de ticket cargado"])
+    CU36_2(["36.2 Recibir notificacion<br/>de solicitud de<br/>transferencia de stock"])
+    CU36_3(["36.3 Recibir notificacion<br/>de pedido a<br/>casa editora"])
+    CO --- CU36_0
+    CU36_0 -.->|"include"| CU36_1
+    CU36_0 -.->|"include"| CU36_2
+    CU36_0 -.->|"include"| CU36_3
 
     %% --- Brasil V3 ---
-    CU39_0(["39.0 Validar y aprobar<br/>tickets de deposito - V3"])
-    CU39_1(["39.1 Registrar depositos<br/>via API Brasil"])
+    CU37_0(["37.0 Validar y aprobar<br/>tickets de deposito - V3"])
+    CU37_1(["37.1 Registrar depositos<br/>via API Brasil"])
     API["API Sistema Brasil"]
+    CO --- CU37_0
+    CU37_0 -.->|"include"| CU37_1
+    CU37_1 --- API
+
+    CU38_0(["38.0 Realizar pedidos<br/>via API Brasil - V3"])
+    CO --- CU38_0
+    CU38_0 --- API
+
+    CU39_0(["39.0 Consultar estado<br/>de pedidos via API - V3"])
     CO --- CU39_0
-    CU39_0 -.->|"include"| CU39_1
-    CU39_1 --- API
-
-    CU40_0(["40.0 Realizar pedidos<br/>via API Brasil - V3"])
-    CO --- CU40_0
-    CU40_0 --- API
-
-    CU41_0(["41.0 Consultar estado<br/>de pedidos via API - V3"])
-    CO --- CU41_0
-    CU41_0 --- API
+    CU39_0 --- API
 ```
 
 ---
@@ -365,49 +365,49 @@ graph LR
     A["Administrador"]
 
     %% --- Gestionar usuarios (ABM) ---
-    CU42_0(["42.0 Gestionar usuarios<br/>del sistema"])
-    CU42_1(["42.1 Consultar usuario"])
-    CU42_2(["42.2 Alta de usuario"])
-    CU42_3(["42.3 Modificar usuario"])
-    CU42_4(["42.4 Baja de usuario"])
-    CU42_5(["42.5 Asignar roles"])
-    A --- CU42_0
-    CU42_0 -.->|"include"| CU42_1
-    CU42_0 -.->|"extend"| CU42_2
-    CU42_0 -.->|"extend"| CU42_3
-    CU42_0 -.->|"extend"| CU42_4
-    CU42_0 -.->|"extend"| CU42_5
+    CU40_0(["40.0 Gestionar usuarios<br/>del sistema"])
+    CU40_1(["40.1 Consultar usuario"])
+    CU40_2(["40.2 Alta de usuario"])
+    CU40_3(["40.3 Modificar usuario"])
+    CU40_4(["40.4 Baja de usuario"])
+    CU40_5(["40.5 Asignar roles"])
+    A --- CU40_0
+    CU40_0 -.->|"include"| CU40_1
+    CU40_0 -.->|"extend"| CU40_2
+    CU40_0 -.->|"extend"| CU40_3
+    CU40_0 -.->|"extend"| CU40_4
+    CU40_0 -.->|"extend"| CU40_5
 
     %% --- Gestionar catalogo de productos (ABM) ---
-    CU43_0(["43.0 Gestionar catalogo<br/>de productos"])
-    CU43_1(["43.1 Consultar producto"])
-    CU43_2(["43.2 Alta de producto"])
-    CU43_3(["43.3 Modificar producto"])
-    CU43_4(["43.4 Baja de producto"])
-    CU43_5(["43.5 Marcar producto<br/>como bonificable"])
-    CU43_6(["43.6 Marcar producto<br/>como misionero"])
-    CU43_7(["43.7 Definir precio<br/>base de compra"])
-    A --- CU43_0
-    CU43_0 -.->|"include"| CU43_1
-    CU43_0 -.->|"extend"| CU43_2
-    CU43_0 -.->|"extend"| CU43_3
-    CU43_0 -.->|"extend"| CU43_4
-    CU43_2 -.->|"extend"| CU43_5
-    CU43_2 -.->|"extend"| CU43_6
-    CU43_2 -.->|"include"| CU43_7
-    CU43_3 -.->|"extend"| CU43_5
-    CU43_3 -.->|"extend"| CU43_6
+    CU41_0(["41.0 Gestionar catalogo<br/>de productos"])
+    CU41_1(["41.1 Consultar producto"])
+    CU41_2(["41.2 Alta de producto"])
+    CU41_3(["41.3 Modificar producto"])
+    CU41_4(["41.4 Baja de producto"])
+    CU41_5(["41.5 Marcar producto<br/>como bonificable"])
+    CU41_6(["41.6 Marcar producto<br/>como misionero"])
+    CU41_7(["41.7 Definir precio<br/>base de compra"])
+    A --- CU41_0
+    CU41_0 -.->|"include"| CU41_1
+    CU41_0 -.->|"extend"| CU41_2
+    CU41_0 -.->|"extend"| CU41_3
+    CU41_0 -.->|"extend"| CU41_4
+    CU41_2 -.->|"extend"| CU41_5
+    CU41_2 -.->|"extend"| CU41_6
+    CU41_2 -.->|"include"| CU41_7
+    CU41_3 -.->|"extend"| CU41_5
+    CU41_3 -.->|"extend"| CU41_6
 
     %% --- Becas V2 ---
-    CU44_0(["44.0 Configurar metas<br/>de beca por carrera"])
-    A --- CU44_0
+    CU42_0(["42.0 Configurar metas<br/>de beca por carrera"])
+    A --- CU42_0
 
     %% --- Reportes ---
-    CU45_0(["45.0 Consultar estadisticas<br/>generales del pais"])
-    A --- CU45_0
+    CU43_0(["43.0 Consultar estadisticas<br/>generales del pais"])
+    A --- CU43_0
 
-    CU46_0(["46.0 Consultar mapa<br/>de ventas heatmap - V2"])
-    A --- CU46_0
+    CU44_0(["44.0 Consultar mapa<br/>de ventas heatmap - V2"])
+    A --- CU44_0
 ```
 
 ---
@@ -516,48 +516,49 @@ graph LR
 | 27.0 | Configurar precios de venta por zona | RF-PR05 | V1 |
 | 28.0 | Agregar acompanamiento a jornada finalizada | RF-JO04 | V1 |
 | 29.0 | Generar reportes de horas trabajadas | RF-JO05 | V1 |
-| 30.0 | Registrar pedido a casa editora | RF-ST01 | V2 |
-| 30.1 | Generar deuda al colportor (include a 25.1) | RF-ST02 | V2 |
-| 31.0 | Autorizar transferencias de stock | RF-ST05 | V2 |
-| 32.0 | Autorizar pedidos a casa editora | RF-ST06 | V2 |
-| 33.0 | Consultar cuenta de colportor | RF-EC05, RF-BE04, RF-RE03 | V2 |
-| 33.1 | Revisar estado de cuenta | RF-EC05 | V2 |
-| 33.2 | Consultar progreso de becas | RF-BE04 | V2 |
-| 33.3 | Consultar estadisticas de ventas | RF-RE03 | V1 |
-| 34.0 | Revisar tickets cargados | RF-CO07 | V2 |
-| 35.0 | Transferir libros entre campanas | RF-BE05 | V2 |
-| 36.0 | Consultar avance de colportores en zona | RF-RE01 | V1 |
-| 37.0 | Generar reportes de horas por periodo | RF-RE02 | V1 |
-| 38.0 | Gestionar notificaciones | RF-NO02, RF-NO03, RF-ST04 | V2 |
-| 38.1 | Recibir notificacion de ticket cargado | RF-NO03 | V2 |
-| 38.2 | Recibir notificacion de solicitud de transferencia de stock | RF-NO02, RF-ST04 | V2 |
-| 38.3 | Recibir notificacion de pedido a casa editora | RF-ST01 | V2 |
-| 39.0 | Validar y aprobar tickets de deposito | RF-BR04 | V3 |
-| 39.1 | Registrar depositos via API Brasil | RF-BR05 | V3 |
-| 40.0 | Realizar pedidos via API Brasil | RF-BR06 | V3 |
-| 41.0 | Consultar estado de pedidos via API | RF-BR07 | V3 |
+| 30.0 | Gestionar stock | RF-ST01, RF-ST05, RF-ST06 | V2 |
+| 30.1 | Registrar pedido a casa editora | RF-ST01 | V2 |
+| 30.2 | Generar deuda al colportor (include a 25.1) | RF-ST02 | V2 |
+| 30.3 | Autorizar transferencias de stock | RF-ST05 | V2 |
+| 30.4 | Autorizar pedidos a casa editora | RF-ST06 | V2 |
+| 31.0 | Consultar cuenta de colportor | RF-EC05, RF-BE04, RF-RE03 | V2 |
+| 31.1 | Revisar estado de cuenta | RF-EC05 | V2 |
+| 31.2 | Consultar progreso de becas | RF-BE04 | V2 |
+| 31.3 | Consultar estadisticas de ventas | RF-RE03 | V1 |
+| 32.0 | Revisar tickets cargados | RF-CO07 | V2 |
+| 33.0 | Transferir libros entre campanas | RF-BE05 | V2 |
+| 34.0 | Consultar avance de colportores en zona | RF-RE01 | V1 |
+| 35.0 | Generar reportes de horas por periodo | RF-RE02 | V1 |
+| 36.0 | Gestionar notificaciones | RF-NO02, RF-NO03, RF-ST04 | V2 |
+| 36.1 | Recibir notificacion de ticket cargado | RF-NO03 | V2 |
+| 36.2 | Recibir notificacion de solicitud de transferencia de stock | RF-NO02, RF-ST04 | V2 |
+| 36.3 | Recibir notificacion de pedido a casa editora | RF-ST01 | V2 |
+| 37.0 | Validar y aprobar tickets de deposito | RF-BR04 | V3 |
+| 37.1 | Registrar depositos via API Brasil | RF-BR05 | V3 |
+| 38.0 | Realizar pedidos via API Brasil | RF-BR06 | V3 |
+| 39.0 | Consultar estado de pedidos via API | RF-BR07 | V3 |
 
 ### Administrador
 
 | CU | Nombre | Requisito IEEE 830 | Version |
 |----|--------|-------------------|---------|
-| 42.0 | Gestionar usuarios del sistema | RF-A01 | V1 |
-| 42.1 | Consultar usuario | RF-A01 | V1 |
-| 42.2 | Alta de usuario | RF-A01 | V1 |
-| 42.3 | Modificar usuario | RF-A01 | V1 |
-| 42.4 | Baja de usuario | RF-A01 | V1 |
-| 42.5 | Asignar roles | RF-A02, RF-AU05 | V1 |
-| 43.0 | Gestionar catalogo de productos | RF-PR01, RF-A05 | V1 |
-| 43.1 | Consultar producto | RF-PR01 | V1 |
-| 43.2 | Alta de producto | RF-PR01, RF-A05 | V1 |
-| 43.3 | Modificar producto | RF-PR01, RF-A05 | V1 |
-| 43.4 | Baja de producto | RF-PR01, RF-A05 | V1 |
-| 43.5 | Marcar producto como bonificable | RF-PR02 | V1 |
-| 43.6 | Marcar producto como misionero | RF-PR03 | V1 |
-| 43.7 | Definir precio base de compra | RF-PR04 | V1 |
-| 44.0 | Configurar metas de beca por carrera | RF-BE01, RF-A06 | V2 |
-| 45.0 | Consultar estadisticas generales del pais | RF-RE04, RF-A04 | V1 |
-| 46.0 | Consultar mapa de ventas heatmap | RF-RE05, RF-A07 | V2 |
+| 40.0 | Gestionar usuarios del sistema | RF-A01 | V1 |
+| 40.1 | Consultar usuario | RF-A01 | V1 |
+| 40.2 | Alta de usuario | RF-A01 | V1 |
+| 40.3 | Modificar usuario | RF-A01 | V1 |
+| 40.4 | Baja de usuario | RF-A01 | V1 |
+| 40.5 | Asignar roles | RF-A02, RF-AU05 | V1 |
+| 41.0 | Gestionar catalogo de productos | RF-PR01, RF-A05 | V1 |
+| 41.1 | Consultar producto | RF-PR01 | V1 |
+| 41.2 | Alta de producto | RF-PR01, RF-A05 | V1 |
+| 41.3 | Modificar producto | RF-PR01, RF-A05 | V1 |
+| 41.4 | Baja de producto | RF-PR01, RF-A05 | V1 |
+| 41.5 | Marcar producto como bonificable | RF-PR02 | V1 |
+| 41.6 | Marcar producto como misionero | RF-PR03 | V1 |
+| 41.7 | Definir precio base de compra | RF-PR04 | V1 |
+| 42.0 | Configurar metas de beca por carrera | RF-BE01, RF-A06 | V2 |
+| 43.0 | Consultar estadisticas generales del pais | RF-RE04, RF-A04 | V1 |
+| 44.0 | Consultar mapa de ventas heatmap | RF-RE05, RF-A07 | V2 |
 
 ---
 
@@ -575,7 +576,8 @@ graph LR
 | Estado de cuenta, becas y estadisticas agrupados en cuenta de colportor (33.0) | Son consultas sobre la misma entidad (colportor), agrupadas bajo un gestor padre |
 | Transferir libros (35.0) como CU independiente | Es una operacion separada del progreso de becas |
 | Eliminado gestionar ciudades del Administrador | Las ciudades no son gestionadas por el administrador en este contexto |
-| Renumeracion completa: Guest 1-3, Colportor 4-23, Coordinador 24-41, Administrador 42-46 | Numeracion continua y coherente tras todos los cambios estructurales |
+| Renumeracion completa: Guest 1-3, Colportor 4-23, Coordinador 24-39, Administrador 40-44 | Numeracion continua y coherente tras todos los cambios estructurales |
+| Stock del Coordinador agrupado bajo gestor (30.0) | Pedidos, autorizaciones de transferencia y autorizaciones de pedidos son sub-casos del mismo gestor |
 | Patron ABM consistente: consultar=include, alta/baja/modificar=extend | Consultar siempre se ejecuta al acceder al gestor; las operaciones de escritura son opcionales |
 | Terminologia normalizada: "ver"/"visualizar" reemplazado por "consultar" | Consistencia terminologica en todo el documento |
 | Registrar pago renombrado a Registrar cobro (13.0) | Unificar terminologia: cobro = pago desde perspectiva del colportor |
