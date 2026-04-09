@@ -1,0 +1,277 @@
+@startuml DiagramaER_Local_ColportajeApp
+!theme plain
+title **Diagrama ER — Modelo LOCAL (Dispositivo del Colportor)**\nIEEE 830 v1.2 (V1 + V2) — 3FN\nAlmacena datos personales de clientes, historial detallado,\nmateriales entregados, saldos y fotos de tickets (RD-01)
+
+skinparam linetype ortho
+skinparam entity {
+  BackgroundColor #FEFCE8
+  BorderColor #854D0E
+  ArrowColor #854D0E
+}
+skinparam package {
+  BackgroundColor #FFF7ED
+  BorderColor #9A3412
+  FontStyle bold
+}
+
+' ============================================================
+'  TABLAS BASE — Geografia
+' ============================================================
+package "Geografia" {
+  entity "CIUDAD" as ciudad {
+    *id : INT <<PK>>
+    --
+    *nombre : VARCHAR(100) <<UK>>
+    *pais : VARCHAR(100)
+    created_at : TIMESTAMP
+  }
+
+  entity "ZONA" as zona {
+    *id : INT <<PK>>
+    --
+    *nombre : VARCHAR(100)
+    *pk_ciudad : INT <<FK>>
+    created_at : TIMESTAMP
+  }
+
+  entity "UBICACION" as ubicacion {
+    *id : INT <<PK>>
+    --
+    *tipo : VARCHAR(20) <<CHECK>>
+    .. CASA | NEGOCIO | EDIFICIO ..
+    *calle : VARCHAR(255)
+    *numero : VARCHAR(50)
+    lat : DECIMAL(10,8)
+    long : DECIMAL(11,8)
+    pk_zona : INT <<FK>> {nullable}
+    *pk_ciudad : INT <<FK>>
+    created_at : TIMESTAMP
+  }
+
+  entity "ESPACIO" as espacio {
+    *id : INT <<PK>>
+    --
+    *pk_ubicacion : INT <<FK>>
+    numero_depto : VARCHAR(20) {nullable}
+    piso : SMALLINT {nullable}
+    descripcion : VARCHAR(255) {nullable}
+    created_at : TIMESTAMP
+  }
+}
+
+' ============================================================
+'  ENTIDADES DE NEGOCIO — Personas y contexto
+' ============================================================
+package "Personas y Contexto" {
+  entity "PERSONA" as persona {
+    *id : INT <<PK>>
+    --
+    *nombre : VARCHAR(100)
+    *apellido : VARCHAR(100)
+    telefono : VARCHAR(20) {nullable}
+    created_at : TIMESTAMP
+  }
+
+  entity "ESPACIO_PERSONA" as espacio_persona {
+    *id : INT <<PK>>
+    --
+    *pk_espacio : INT <<FK>>
+    *pk_persona : INT <<FK>>
+    pk_ubicacion_cobranza_alt : INT <<FK>> {nullable}
+    created_at : TIMESTAMP
+    ..
+    <<UK>> (pk_espacio, pk_persona)
+  }
+}
+
+' ============================================================
+'  USUARIO
+' ============================================================
+package "Usuario" {
+  entity "USUARIO" as usuario {
+    *id : INT <<PK>>
+    --
+    *nombre : VARCHAR(100)
+    *apellido : VARCHAR(100)
+    *email : VARCHAR(100) <<UK>>
+    rol : VARCHAR(30) <<CHECK>>
+    .. COLPORTOR | COORDINADOR |
+    ASISTENTE | ACOMPANANTE | ADMIN ..
+    pk_zona : INT <<FK>> {nullable}
+    created_at : TIMESTAMP
+  }
+}
+
+' ============================================================
+'  OPERACIONES — Visitas, Agenda, Jornada
+' ============================================================
+package "Operaciones" {
+  entity "VISITA" as visita {
+    *id : INT <<PK>>
+    --
+    *pk_espacio_persona : INT <<FK>>
+    *fecha : TIMESTAMP
+    tipo_resultado : VARCHAR(50) <<CHECK>>
+    .. VENTA | NO_CONTESTO |
+    RECHAZO | ENTREVISTA ..
+    notas : TEXT {nullable}
+    *pk_colportor : INT <<FK>>
+    created_at : TIMESTAMP
+  }
+
+  entity "AGENDA" as agenda {
+    *id : INT <<PK>>
+    --
+    *pk_espacio_persona : INT <<FK>>
+    tipo : VARCHAR(50) <<CHECK>>
+    .. ENTREVISTA | COBRANZA ..
+    *fecha_programada : TIMESTAMP
+    pk_ubicacion_alt : INT <<FK>> {nullable}
+    estado : VARCHAR(30) <<CHECK>>
+    .. PENDIENTE | COMPLETADA | CANCELADA ..
+    pk_colportor : INT <<FK>> {nullable}
+    created_at : TIMESTAMP
+  }
+
+  entity "JORNADA" as jornada {
+    *id : INT <<PK>>
+    --
+    *pk_colportor : INT <<FK>>
+    *fecha_inicio : TIMESTAMP
+    fecha_fin : TIMESTAMP {nullable}
+    pk_acompanante : INT <<FK>> {nullable}
+    notas : TEXT {nullable}
+    created_at : TIMESTAMP
+  }
+}
+
+' ============================================================
+'  VENTAS Y PAGOS
+' ============================================================
+package "Ventas y Pagos" {
+  entity "VENTA" as venta {
+    *id : INT <<PK>>
+    --
+    *pk_espacio_persona : INT <<FK>>
+    *numero_talonario : VARCHAR(50)
+    *monto_total : DECIMAL(10,2)
+    *fecha : TIMESTAMP
+    *pk_colportor : INT <<FK>>
+    created_at : TIMESTAMP
+  }
+
+  entity "VENTA_DETALLE" as venta_detalle {
+    *id : INT <<PK>>
+    --
+    *pk_venta : INT <<FK>>
+    *pk_producto : INT <<FK>>
+    *cantidad : INT
+    *precio_unitario : DECIMAL(10,2)
+    *subtotal : DECIMAL(10,2)
+  }
+
+  entity "PAGO" as pago {
+    *id : INT <<PK>>
+    --
+    *pk_venta : INT <<FK>>
+    *tipo_pago : VARCHAR(30) <<CHECK>>
+    .. EFECTIVO | TARJETA_DEBITO |
+    TARJETA_CREDITO | TRANSFERENCIA ..
+    *monto : DECIMAL(10,2)
+    *fecha : TIMESTAMP
+    numero_cuota : INT {nullable}
+    total_cuotas : INT {nullable}
+    imagen_ticket : VARCHAR(500) {nullable}
+    estado_ticket : VARCHAR(30) <<CHECK>>
+    .. PENDIENTE | REVISADO | APROBADO ..
+    *pk_colportor : INT <<FK>>
+    created_at : TIMESTAMP
+  }
+}
+
+' ============================================================
+'  ENTREGAS Y CATALOGO LOCAL
+' ============================================================
+package "Entregas y Catalogo" {
+  entity "PRODUCTO_LOCAL" as producto_local {
+    *id : INT <<PK>>
+    .. mismo ID que cloud (sync) ..
+    --
+    *nombre : VARCHAR(200)
+    *tipo : VARCHAR(30) <<CHECK>>
+    .. LIBRO | REVISTA | MATERIAL ..
+    *es_bonificable : BOOLEAN
+    *es_misionero : BOOLEAN
+    *precio_compra : DECIMAL(10,2)
+    *precio_venta : DECIMAL(10,2)
+    .. precio para zona del colportor ..
+    updated_at : TIMESTAMP
+  }
+
+  entity "ENTREGA" as entrega {
+    *id : INT <<PK>>
+    --
+    *pk_espacio_persona : INT <<FK>>
+    *pk_colportor : INT <<FK>>
+    *fecha : TIMESTAMP
+    notas : TEXT {nullable}
+    created_at : TIMESTAMP
+  }
+
+  entity "ENTREGA_DETALLE" as entrega_detalle {
+    *id : INT <<PK>>
+    --
+    *pk_entrega : INT <<FK>>
+    *pk_producto : INT <<FK>>
+    *cantidad : INT
+  }
+}
+
+' ============================================================
+'  RELACIONES
+' ============================================================
+
+' -- Geografia --
+ciudad ||--o{ zona
+ciudad ||--o{ ubicacion
+zona ||--o{ ubicacion
+ubicacion ||--o{ espacio
+
+' -- Personas y Contexto --
+espacio ||--o{ espacio_persona
+persona ||--o{ espacio_persona
+espacio_persona }o..o| ubicacion : "cobranza\nalternativa"
+
+' -- Usuario a Zona --
+zona ||--o{ usuario
+
+' -- Espacio_Persona -> Operaciones --
+espacio_persona ||--o{ visita
+espacio_persona ||--o{ agenda
+espacio_persona ||--o{ venta
+espacio_persona ||--o{ entrega
+
+' -- Usuario -> Operaciones --
+usuario ||--o{ visita : "realiza"
+usuario ||--o{ agenda : "agenda"
+usuario ||--o{ venta : "registra"
+usuario ||--o{ pago : "cobra"
+usuario ||--o{ jornada : "trabaja"
+usuario ||--o{ entrega : "entrega"
+usuario |o..o{ jornada : "acompana"
+
+' -- Agenda -> Ubicacion alternativa --
+agenda }o..o| ubicacion : "ubicacion\nalternativa"
+
+' -- Venta -> Detalle y Pago --
+venta ||--o{ venta_detalle
+venta ||--o{ pago
+
+' -- Producto Local -> Detalles --
+producto_local ||--o{ venta_detalle
+producto_local ||--o{ entrega_detalle
+
+' -- Entrega -> Detalle --
+entrega ||--o{ entrega_detalle
+
+@enduml

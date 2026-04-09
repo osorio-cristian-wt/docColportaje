@@ -1,0 +1,330 @@
+@startuml DiagramaER_Cloud_ColportajeApp
+!theme plain
+title **Diagrama ER — Modelo CLOUD (Backend Administrado)**\nIEEE 830 v1.2 (V1 + V2) — 3FN\nSin datos personales de clientes (RD-02, RD-07)\nGestiona: autenticacion, campanas, catalogo, stock, estado de cuenta
+
+skinparam linetype ortho
+skinparam entity {
+  BackgroundColor #EFF6FF
+  BorderColor #1E40AF
+  ArrowColor #1E40AF
+}
+skinparam package {
+  BackgroundColor #F0F9FF
+  BorderColor #0369A1
+  FontStyle bold
+}
+
+' ============================================================
+'  AUTENTICACION Y GEOGRAFIA
+' ============================================================
+package "Autenticacion y Geografia" {
+  entity "C_USUARIO" as c_usuario {
+    *id : INT <<PK>>
+    --
+    *nombre : VARCHAR(100)
+    *apellido : VARCHAR(100)
+    *email : VARCHAR(100) <<UK>>
+    *password_hash : VARCHAR(255)
+    rol : VARCHAR(30) <<CHECK>>
+    .. COLPORTOR | COORDINADOR |
+    ASISTENTE | ACOMPANANTE | ADMIN ..
+    pk_zona : INT <<FK>> {nullable}
+    *activo : BOOLEAN
+    ultimo_login : TIMESTAMP {nullable}
+    created_at : TIMESTAMP
+  }
+
+  entity "C_CIUDAD" as c_ciudad {
+    *id : INT <<PK>>
+    --
+    *nombre : VARCHAR(100) <<UK>>
+    *pais : VARCHAR(100)
+  }
+
+  entity "C_ZONA" as c_zona {
+    *id : INT <<PK>>
+    --
+    *nombre : VARCHAR(100)
+    *pk_ciudad : INT <<FK>>
+  }
+}
+
+' ============================================================
+'  CAMPANAS
+' ============================================================
+package "Campanas" {
+  entity "C_CAMPANA" as c_campana {
+    *id : INT <<PK>>
+    --
+    *nombre : VARCHAR(150)
+    *tipo : VARCHAR(30) <<CHECK>>
+    .. VERANO | INVIERNO | PERMANENTE ..
+    *fecha_inicio : DATE
+    *fecha_fin : DATE
+    *pk_coordinador : INT <<FK>>
+    created_at : TIMESTAMP
+  }
+
+  entity "C_CAMPANA_COLPORTOR" as c_campana_colportor {
+    *id : INT <<PK>>
+    --
+    *pk_campana : INT <<FK>>
+    *pk_colportor : INT <<FK>>
+    *pk_zona : INT <<FK>>
+    ..
+    <<UK>> (pk_campana, pk_colportor)
+  }
+}
+
+' ============================================================
+'  CATALOGO Y PRECIOS
+' ============================================================
+package "Catalogo y Precios" {
+  entity "C_PRODUCTO" as c_producto {
+    *id : INT <<PK>>
+    --
+    *nombre : VARCHAR(200)
+    *tipo : VARCHAR(30) <<CHECK>>
+    .. LIBRO | REVISTA | MATERIAL ..
+    *es_bonificable : BOOLEAN
+    *es_misionero : BOOLEAN
+    *precio_compra : DECIMAL(10,2)
+    *activo : BOOLEAN
+    created_at : TIMESTAMP
+    updated_at : TIMESTAMP
+  }
+
+  entity "C_COLECCION" as c_coleccion {
+    *id : INT <<PK>>
+    --
+    *nombre : VARCHAR(150)
+    descripcion : VARCHAR(500) {nullable}
+    created_at : TIMESTAMP
+  }
+
+  entity "C_COLECCION_PRODUCTO" as c_coleccion_producto {
+    *pk_coleccion : INT <<FK>>
+    *pk_producto : INT <<FK>>
+    --
+    <<PK>> (pk_coleccion, pk_producto)
+  }
+
+  entity "C_PRECIO_ZONA" as c_precio_zona {
+    *id : INT <<PK>>
+    --
+    *pk_producto : INT <<FK>>
+    *pk_zona : INT <<FK>>
+    *precio_venta : DECIMAL(10,2)
+    updated_at : TIMESTAMP
+    ..
+    <<UK>> (pk_producto, pk_zona)
+  }
+}
+
+' ============================================================
+'  STOCK Y PEDIDOS
+' ============================================================
+package "Stock y Pedidos" {
+  entity "C_STOCK" as c_stock {
+    *id : INT <<PK>>
+    --
+    *pk_colportor : INT <<FK>>
+    *pk_producto : INT <<FK>>
+    *cantidad : INT
+    updated_at : TIMESTAMP
+    ..
+    <<UK>> (pk_colportor, pk_producto)
+  }
+
+  entity "C_PEDIDO" as c_pedido {
+    *id : INT <<PK>>
+    --
+    *pk_colportor : INT <<FK>>
+    pk_coordinador : INT <<FK>> {nullable}
+    .. quien autoriza ..
+    *estado : VARCHAR(30) <<CHECK>>
+    .. PENDIENTE | AUTORIZADO |
+    RECHAZADO | DESPACHADO | RECIBIDO ..
+    *monto_total : DECIMAL(10,2)
+    created_at : TIMESTAMP
+  }
+
+  entity "C_PEDIDO_DETALLE" as c_pedido_detalle {
+    *id : INT <<PK>>
+    --
+    *pk_pedido : INT <<FK>>
+    *pk_producto : INT <<FK>>
+    *cantidad : INT
+    *precio_unitario : DECIMAL(10,2)
+  }
+
+  entity "C_TRANSFERENCIA_STOCK" as c_transferencia {
+    *id : INT <<PK>>
+    --
+    *pk_producto : INT <<FK>>
+    *pk_origen : INT <<FK>>
+    .. colportor origen ..
+    *pk_destino : INT <<FK>>
+    .. colportor destino ..
+    *cantidad : INT
+    *estado : VARCHAR(30) <<CHECK>>
+    .. SOLICITADA | AUTORIZADA |
+    RECHAZADA | COMPLETADA ..
+    pk_coordinador : INT <<FK>> {nullable}
+    created_at : TIMESTAMP
+  }
+}
+
+' ============================================================
+'  FINANZAS — Movimientos y Estado de Cuenta
+' ============================================================
+package "Finanzas" {
+  entity "C_MOVIMIENTO" as c_movimiento {
+    *id : INT <<PK>>
+    --
+    *pk_colportor : INT <<FK>>
+    *tipo : VARCHAR(50) <<CHECK>>
+    .. CARGO_PEDIDO | DEPOSITO_EFECTIVO |
+    DEPOSITO_TARJETA | ABONO_VENTA |
+    TRANSFERENCIA ..
+    *monto : DECIMAL(10,2)
+    .. positivo = abono, negativo = cargo ..
+    referencia : VARCHAR(100) {nullable}
+    .. num talonario, ID pedido, etc ..
+    *fecha : TIMESTAMP
+    created_at : TIMESTAMP
+  }
+}
+
+' ============================================================
+'  UBICACIONES AGREGADAS (sin datos personales)
+' ============================================================
+package "Ubicaciones Agregadas" {
+  entity "C_UBICACION_ESTADO" as c_ubicacion_estado {
+    *id : INT <<PK>>
+    --
+    *lat : DECIMAL(10,8)
+    *long : DECIMAL(11,8)
+    *tipo : VARCHAR(20) <<CHECK>>
+    .. CASA | NEGOCIO | EDIFICIO ..
+    ultimo_resultado : VARCHAR(50)
+    .. VENTA | NO_CONTESTO |
+    RECHAZO | ENTREVISTA ..
+    fecha_ultima_visita : TIMESTAMP {nullable}
+    pk_zona : INT <<FK>> {nullable}
+    *pk_colportor : INT <<FK>>
+    updated_at : TIMESTAMP
+  }
+}
+
+' ============================================================
+'  BECAS
+' ============================================================
+package "Becas" {
+  entity "C_BECA_CONFIG" as c_beca_config {
+    *id : INT <<PK>>
+    --
+    *carrera : VARCHAR(150)
+    *meta_libros_media_beca : INT
+    *meta_libros_beca_completa : INT
+    *pk_campana : INT <<FK>>
+  }
+
+  entity "C_BECA_PROGRESO" as c_beca_progreso {
+    *id : INT <<PK>>
+    --
+    *pk_colportor : INT <<FK>>
+    *pk_beca_config : INT <<FK>>
+    *libros_bonificables_vendidos : INT
+    updated_at : TIMESTAMP
+  }
+}
+
+' ============================================================
+'  SOPORTE — Notificaciones y Sync
+' ============================================================
+package "Soporte" {
+  entity "C_NOTIFICACION" as c_notificacion {
+    *id : INT <<PK>>
+    --
+    *pk_usuario_destino : INT <<FK>>
+    *tipo : VARCHAR(50) <<CHECK>>
+    .. RECORDATORIO_VISITA |
+    PEDIDO_AUTORIZADO |
+    TICKET_CARGADO |
+    CUOTA_PENDIENTE ..
+    *titulo : VARCHAR(200)
+    *mensaje : TEXT
+    *leida : BOOLEAN
+    created_at : TIMESTAMP
+  }
+
+  entity "C_SYNC_LOG" as c_sync_log {
+    *id : INT <<PK>>
+    --
+    *pk_usuario : INT <<FK>>
+    *ultima_sync : TIMESTAMP
+    *registros_enviados : INT
+    *registros_recibidos : INT
+  }
+}
+
+' ============================================================
+'  RELACIONES
+' ============================================================
+
+' -- Geografia --
+c_ciudad ||--o{ c_zona
+
+' -- Zona -> entidades --
+c_zona ||--o{ c_usuario
+c_zona ||--o{ c_ubicacion_estado
+c_zona ||--o{ c_precio_zona
+c_zona ||--o{ c_campana_colportor
+
+' -- Usuario -> Campanas --
+c_usuario ||--o{ c_campana : "coordina"
+c_usuario ||--o{ c_campana_colportor : "participa"
+
+' -- Usuario -> Stock/Pedidos --
+c_usuario ||--o{ c_stock : "posee"
+c_usuario ||--o{ c_pedido : "solicita"
+c_usuario |o--o{ c_pedido : "autoriza"
+c_usuario ||--o{ c_transferencia : "origen"
+c_usuario ||--o{ c_transferencia : "destino"
+c_usuario |o--o{ c_transferencia : "autoriza"
+
+' -- Usuario -> Finanzas --
+c_usuario ||--o{ c_movimiento : "registra"
+
+' -- Usuario -> Ubicaciones --
+c_usuario ||--o{ c_ubicacion_estado : "reporta"
+
+' -- Usuario -> Becas --
+c_usuario ||--o{ c_beca_progreso : "avanza"
+
+' -- Usuario -> Soporte --
+c_usuario ||--o{ c_notificacion : "recibe"
+c_usuario ||--o{ c_sync_log : "sincroniza"
+
+' -- Campana --
+c_campana ||--o{ c_campana_colportor : "incluye"
+c_campana ||--o{ c_beca_config : "define"
+
+' -- Producto -> Catalogo --
+c_producto ||--o{ c_coleccion_producto
+c_producto ||--o{ c_precio_zona
+c_producto ||--o{ c_stock
+c_producto ||--o{ c_pedido_detalle
+c_producto ||--o{ c_transferencia
+
+' -- Coleccion --
+c_coleccion ||--o{ c_coleccion_producto : "agrupa"
+
+' -- Pedido -> Detalle --
+c_pedido ||--o{ c_pedido_detalle : "contiene"
+
+' -- Beca Config -> Progreso --
+c_beca_config ||--o{ c_beca_progreso : "evalua"
+
+@enduml
